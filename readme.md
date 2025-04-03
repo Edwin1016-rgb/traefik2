@@ -15,4 +15,7 @@ http://localhost/api.registros/reporte
 
 http://localhost/api.registros/countRegisters
 
+## claves
+admin/uptc
+
 
