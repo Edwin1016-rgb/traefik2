@@ -1,0 +1,88 @@
+version: '3.8'
+
+networks:
+  traefik_net:
+    driver: bridge
+
+services:
+  traefik:
+    image: traefik:v2.10
+    ports:
+      - "80:80"
+      - "8080:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./traefik/users.htpasswd:/etc/traefik/users.htpasswd
+    networks:
+      - traefik_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`localhost`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=web"
+      # Middleware para asegurar que solo localhost acceda al dashboard
+      - "traefik.http.routers.traefik.middlewares=allow-local-only"
+      - "traefik.http.middlewares.allow-local-only.ipwhitelist.sourcerange=127.0.0.1/32,::1/128"
+
+  api-analytics:
+    build: ./api-analytics
+    networks:
+      - traefik_net
+    labels:
+      - "traefik.enable=true"
+      - log.level=DEBUG
+      - "traefik.http.routers.api.rule=PathPrefix(`/api.registro`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      # Middleware de autenticación básica
+      - "traefik.http.routers.api.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/users.htpasswd"
+      # Middleware para agregar headers
+      - "traefik.http.middlewares.add-headers.headers.customrequestheaders.X-Service-ID=api-analitycs"
+      - "traefik.http.services.api.loadbalancer.server.port=3000"
+
+  cliente-uno:
+    build: ./api-requests
+    environment:
+      - SERVICE_ID=cliente-uno
+    networks:
+      - traefik_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cliente-uno.rule=PathPrefix(`/cliente/uno`)"
+      - "traefik.http.routers.cliente-uno.entrypoints=web"
+      # Middleware stripPrefix
+      - "traefik.http.routers.cliente-uno.middlewares=strip-uno"
+      - "traefik.http.middlewares.strip-uno.stripprefix.prefixes=/cliente/uno"
+      # Middleware para agregar headers
+      - "traefik.http.middlewares.add-headers-uno.headers.customrequestheaders.X-Service-ID=uno"
+      - "traefik.http.services.cliente-uno.loadbalancer.server.port=4000"
+
+  cliente-dos:
+    build: ./api-requests
+    environment:
+      - SERVICE_ID=cliente-dos
+    networks:
+      - traefik_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cliente-dos.rule=PathPrefix(`/cliente/dos`)"
+      - "traefik.http.routers.cliente-dos.entrypoints=web"
+      # Middleware stripPrefix
+      - "traefik.http.routers.cliente-dos.middlewares=strip-dos"
+      - "traefik.http.middlewares.strip-dos.stripprefix.prefixes=/cliente/dos"
+      # Middleware para agregar headers
+      - "traefik.http.middlewares.add-headers-dos.headers.customrequestheaders.X-Service-ID=dos"
+      - "traefik.http.services.cliente-dos.loadbalancer.server.port=4000"
+
+  panel-web:
+    build: ./panel-web
+    networks:
+      - traefik_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.panel-web.rule=PathPrefix(`/panel.web`)"
+      - "traefik.http.routers.panel-web.entrypoints=web"
+      # Middleware para agregar headers
+      - "traefik.http.middlewares.add-headers-panel-web.headers.customrequestheaders.X-Service-ID=panel-web"
+      - "traefik.http.services.panel-web.loadbalancer.server.port=5000"
