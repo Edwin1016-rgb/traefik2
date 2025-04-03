@@ -5,7 +5,7 @@ const port = 5000;
 
 app.get('panel.web/status', async (req, res) => {
   try {
-    const response = await axios.get('localhost/api.registro/countRegisters');
+    const response = await axios.get('http://localhost/api.registro/countRegisters');
     const registros = response.data;
     
     const status = {

@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
 setInterval(async () => {
   try {
     // En las solicitudes al api-registro
-    const response = await axios.post('localhost/api.registro/countRegisters', {}, {
+    const response = await axios.post('http://localhost/api.registro/countRegisters', {}, {
         headers: {
         'X-Service-ID -------> ': SERVICE_ID
         }

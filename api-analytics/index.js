@@ -3,11 +3,11 @@ const app = express();
 const port = 3000;
 let registros = {};
 
-app.root 
 app.use(express.json());
+const ruta = "/api.registro";
 
 
-app.post(path,'/countRegisters', (req, res) => {
+app.post('${ruta}/countRegisters', (req, res) => {
   const serviceId = req.headers['x-service-id'];
   if (!serviceId) {
     return res.status(400).send('X-Service-ID header is required');
@@ -22,7 +22,7 @@ app.post(path,'/countRegisters', (req, res) => {
   });
 });
 
-app.get(path,'/reporte', (req, res) => {
+app.get('${ruta}/reporte', (req, res) => {
   res.json(registros);
 });
 
